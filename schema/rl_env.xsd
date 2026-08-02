@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:simpleType name="rangeType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\[\s*-?[0-9]*\.?[0-9]+\s*,\s*-?[0-9]*\.?[0-9]+\s*\]"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="resolutionType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]+x[0-9]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- observations -->
+
+  <xs:complexType name="jointObservationType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="objectObservationType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="frame" type="xs:string" use="optional" default="world"/>
+  </xs:complexType>
+
+  <xs:complexType name="cameraObservationType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="resolution" type="resolutionType" use="required"/>
+    <xs:attribute name="channels" use="optional" default="rgb">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="rgb"/>
+          <xs:enumeration value="depth"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="customObservationType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="callable" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="observationsType">
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="joint_position" type="jointObservationType"/>
+      <xs:element name="joint_velocity" type="jointObservationType"/>
+      <xs:element name="object_pose" type="objectObservationType"/>
+      <xs:element name="object_position" type="objectObservationType"/>
+      <xs:element name="camera" type="cameraObservationType"/>
+      <xs:element name="custom" type="customObservationType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- actions -->
+
+  <xs:complexType name="jointActionType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="range" type="rangeType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="eventActionType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="signal" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="customActionType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="callable" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="actionsType">
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="joint_velocity" type="jointActionType"/>
+      <xs:element name="joint_position" type="jointActionType"/>
+      <xs:element name="event" type="eventActionType"/>
+      <xs:element name="custom" type="customActionType"/>
+    </xs:choice>
+    <xs:attribute name="type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="continuous"/>
+          <xs:enumeration value="discrete"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- reward -->
+
+  <xs:complexType name="termType">
+    <xs:attribute name="type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="distance"/>
+          <xs:enumeration value="collision"/>
+          <xs:enumeration value="signal_event"/>
+          <xs:enumeration value="custom"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="weight" type="xs:decimal" use="required"/>
+    <xs:attribute name="from" type="xs:string" use="optional"/>
+    <xs:attribute name="to" type="xs:string" use="optional"/>
+    <xs:attribute name="object1" type="xs:string" use="optional"/>
+    <xs:attribute name="object2" type="xs:string" use="optional"/>
+    <xs:attribute name="signal" type="xs:string" use="optional"/>
+    <xs:attribute name="callable" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="rewardType">
+    <xs:sequence>
+      <xs:element name="term" type="termType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- termination -->
+
+  <xs:complexType name="conditionType">
+    <xs:attribute name="type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="signal"/>
+          <xs:enumeration value="max_steps"/>
+          <xs:enumeration value="custom"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="value" type="xs:decimal" use="optional"/>
+    <xs:attribute name="callable" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="terminationType">
+    <xs:sequence>
+      <xs:element name="condition" type="conditionType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- domain randomization -->
+
+  <xs:complexType name="textureRandomizationType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="pool" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="cameraRandomizationType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="jitter_pos" type="xs:decimal" use="optional"/>
+    <xs:attribute name="jitter_rot_deg" type="xs:decimal" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="visualRandomizationType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="texture" type="textureRandomizationType"/>
+      <xs:element name="camera" type="cameraRandomizationType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="rangeRandomizationType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="range" type="rangeType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="dynamicsRandomizationType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="mass" type="rangeRandomizationType"/>
+      <xs:element name="friction" type="rangeRandomizationType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="latencyRandomizationType">
+    <xs:sequence>
+      <xs:element name="action_delay_steps" minOccurs="0">
+        <xs:complexType>
+          <xs:attribute name="range" type="rangeType" use="required"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="observation_noise" minOccurs="0">
+        <xs:complexType>
+          <xs:attribute name="std" type="xs:decimal" use="required"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="resampleOnEnumType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="episode_start"/>
+      <xs:enumeration value="n_steps"/>
+      <xs:enumeration value="once"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="domainRandomizationType">
+    <xs:sequence>
+      <xs:element name="visual" type="visualRandomizationType" minOccurs="0"/>
+      <xs:element name="dynamics" type="dynamicsRandomizationType" minOccurs="0"/>
+      <xs:element name="latency" type="latencyRandomizationType" minOccurs="0"/>
+      <xs:element name="resample_on" minOccurs="0" default="episode_start">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="resampleOnEnumType">
+              <!-- required when resample_on's text is "n_steps" -->
+              <xs:attribute name="every_n_steps" type="xs:positiveInteger" use="optional"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- root -->
+
+  <xs:element name="rl_env">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="observations" type="observationsType"/>
+        <xs:element name="actions" type="actionsType"/>
+        <xs:element name="reward" type="rewardType"/>
+        <xs:element name="termination" type="terminationType"/>
+        <xs:element name="domain_randomization" type="domainRandomizationType" minOccurs="0"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required"/>
+      <xs:attribute name="step_dt" type="xs:decimal" use="required"/>
+      <xs:attribute name="scene" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

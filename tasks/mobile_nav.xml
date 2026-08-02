@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rl_env name="mobile_nav" step_dt="0.05" scene="../scenes/mobile_nav.ttt">
+  <observations>
+    <object_position ref="PioneerP3DX" frame="world"/>
+    <object_position ref="NavGoal" frame="PioneerP3DX"/>
+    <joint_velocity ref="left_wheel"/>
+    <joint_velocity ref="right_wheel"/>
+  </observations>
+  <actions type="continuous">
+    <joint_velocity ref="left_wheel" range="[-5,5]"/>
+    <joint_velocity ref="right_wheel" range="[-5,5]"/>
+  </actions>
+  <reward>
+    <term type="distance" from="PioneerP3DX" to="NavGoal" weight="-1.0"/>
+  </reward>
+  <termination>
+    <condition type="custom" callable="tasks.mobile_nav_task:reached_goal"/>
+    <condition type="max_steps" value="300"/>
+  </termination>
+</rl_env>

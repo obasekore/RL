@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rl_env name="pick_and_place" step_dt="0.05" scene="../scenes/pick_and_place.ttt">
+  <observations>
+    <joint_position ref="UR5_joint1"/>
+    <joint_position ref="UR5_joint2"/>
+    <joint_position ref="UR5_joint3"/>
+    <joint_position ref="UR5_joint4"/>
+    <joint_position ref="UR5_joint5"/>
+    <joint_position ref="UR5_joint6"/>
+    <joint_velocity ref="UR5_joint1"/>
+    <joint_velocity ref="UR5_joint2"/>
+    <joint_velocity ref="UR5_joint3"/>
+    <joint_velocity ref="UR5_joint4"/>
+    <joint_velocity ref="UR5_joint5"/>
+    <joint_velocity ref="UR5_joint6"/>
+    <object_position ref="gripper_tip" frame="world"/>
+    <object_position ref="target_cube" frame="world"/>
+    <camera ref="wrist_cam" resolution="128x128" channels="rgb"/>
+  </observations>
+  <actions type="continuous">
+    <joint_velocity ref="UR5_joint1" range="[-1,1]"/>
+    <joint_velocity ref="UR5_joint2" range="[-1,1]"/>
+    <joint_velocity ref="UR5_joint3" range="[-1,1]"/>
+    <joint_velocity ref="UR5_joint4" range="[-1,1]"/>
+    <joint_velocity ref="UR5_joint5" range="[-1,1]"/>
+    <joint_velocity ref="UR5_joint6" range="[-1,1]"/>
+  </actions>
+  <reward>
+    <term type="distance" from="gripper_tip" to="target_cube" weight="-1.0"/>
+    <term type="signal_event" signal="grasp_success" weight="10.0"/>
+  </reward>
+  <termination>
+    <condition type="signal" name="task_done"/>
+    <condition type="max_steps" value="300"/>
+  </termination>
+</rl_env>

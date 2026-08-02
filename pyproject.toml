@@ -12,6 +12,9 @@ dependencies = [
     "pyzmq>=27.1.0",
 ]
 
+[project.optional-dependencies]
+sb3 = ["stable-baselines3>=2.0.0"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",

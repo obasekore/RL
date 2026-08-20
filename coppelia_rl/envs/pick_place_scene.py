@@ -16,7 +16,8 @@ import numpy as np
 
 from coppelia_rl.envs.ur5_arm import load_ur5_arm, resolve_ur5_arm
 from coppelia_rl.sim_interface.client import SimClient
-from coppelia_rl.sim_interface.objects import Joint, SceneObject, VisionSensor
+from coppelia_rl.sim_interface.objects import Joint, SceneObject
+from coppelia_rl.sim_interface.vision import VisionSensor
 
 
 @dataclass
@@ -40,6 +41,7 @@ def ensure_pick_and_place_scene(
         arm = resolve_ur5_arm(client)
         target_cube = client.get_object("/target_cube")
         wrist_cam = client.get_vision_sensor("/wrist_cam")
+        _position_wrist_cam(wrist_cam, arm.tip)
         return PickPlaceScene(
             base=arm.base, joints=arm.joints, tip=arm.tip, target_cube=target_cube, wrist_cam=wrist_cam
         )
@@ -54,7 +56,7 @@ def ensure_pick_and_place_scene(
     wrist_cam = client.create_vision_sensor(resolution=(128, 128))
     wrist_cam.set_name("wrist_cam")
     wrist_cam.set_parent(arm.tip, keep_in_place=False)
-    wrist_cam.set_position([0.0, 0.0, 0.05], relative_to=arm.tip.handle)
+    _position_wrist_cam(wrist_cam, arm.tip)
 
     scene_path.parent.mkdir(parents=True, exist_ok=True)
     client.save_scene(scene_path)
@@ -62,6 +64,19 @@ def ensure_pick_and_place_scene(
     return PickPlaceScene(
         base=arm.base, joints=arm.joints, tip=arm.tip, target_cube=target_cube, wrist_cam=wrist_cam
     )
+
+
+def _position_wrist_cam(wrist_cam, tip) -> None:
+    """Offset from the tip dummy the camera is parented to.
+
+    The original [0, 0, 0.05] placement put the sensor close enough to the
+    UR5's own wrist/flange geometry to self-occlude - the view was blank
+    with a real object directly in front of it. Shifted -0.05 on X to clear
+    that self-occlusion (found empirically against a live instance). Applied
+    on every resolve, not just fresh builds, so it also self-heals
+    already-saved scenes built before this fix.
+    """
+    wrist_cam.set_position([-0.05, 0.0, 0.05], relative_to=tip.handle)
 
 
 def sample_cube_position(rng: np.random.Generator) -> np.ndarray:

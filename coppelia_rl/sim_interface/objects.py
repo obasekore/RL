@@ -46,6 +46,9 @@ class SceneObject:
         self._sim.setObjectParent(self.handle, parent_handle, keep_in_place)
 
 
+_JOINT_DYNCTRL_MODES = ("free", "force", "velocity", "position", "spring", "callback")
+
+
 class Joint(SceneObject):
     """A revolute or prismatic joint.
 
@@ -68,6 +71,22 @@ class Joint(SceneObject):
     def set_target_force(self, force: float) -> None:
         self._sim.setJointTargetForce(self.handle, force)
 
+    def set_control_mode(self, mode: str) -> None:
+        """Sets the joint's dynamic control mode (`sim.jointdynctrl_*`).
+
+        Confirmed live and load-bearing: `set_target_velocity()` is silently
+        near-inert unless the joint is actually in "velocity" mode - the
+        stock UR5.ttm's joints default to "position" mode, so every
+        joint_velocity action in this project was barely moving the arm
+        until this is set. Called once per joint from generic_env.py,
+        matched to whatever action kind (`joint_velocity`/`joint_position`)
+        the schema declares for it.
+        """
+        if mode not in _JOINT_DYNCTRL_MODES:
+            raise ValueError(f"Unknown joint control mode {mode!r}, expected one of {_JOINT_DYNCTRL_MODES}")
+        param_id = getattr(self._sim, f"jointdynctrl_{mode}")
+        self._sim.setObjectInt32Param(self.handle, self._sim.jointintparam_dynctrlmode, param_id)
+
     def get_interval(self) -> tuple[bool, float, float]:
         """Returns (cyclic, min, range). Max allowed value is min + range."""
         cyclic, interval = self._sim.getJointInterval(self.handle)
@@ -87,22 +106,6 @@ class Sensor(SceneObject):
         result, force, torque = self._sim.readForceSensor(self.handle)
         available = bool(result & 1)
         return available, np.array(force, dtype=np.float64), np.array(torque, dtype=np.float64)
-
-
-class VisionSensor(SceneObject):
-    """An RGB/depth vision sensor."""
-
-    def get_rgb(self) -> np.ndarray:
-        img, resolution = self._sim.getVisionSensorImg(self.handle)
-        width, height = resolution
-        arr = np.frombuffer(img, dtype=np.uint8)
-        return arr.reshape(height, width, 3)[::-1]
-
-    def get_depth(self) -> np.ndarray:
-        buf, resolution = self._sim.getVisionSensorDepthBuffer(self.handle)
-        width, height = resolution
-        arr = np.array(buf, dtype=np.float32)
-        return arr.reshape(height, width)[::-1]
 
 
 class Signal:

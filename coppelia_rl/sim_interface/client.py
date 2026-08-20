@@ -13,7 +13,8 @@ from pathlib import Path
 
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 
-from coppelia_rl.sim_interface.objects import Joint, Sensor, SceneObject, Signal, VisionSensor
+from coppelia_rl.sim_interface.objects import Joint, Sensor, SceneObject, Signal
+from coppelia_rl.sim_interface.vision import VisionSensor
 
 _PRIMITIVE_SHAPE_KINDS = {
     "cuboid": "primitiveshape_cuboid",

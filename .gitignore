@@ -10,3 +10,4 @@ wheels/
 .venv
 
 *.h5
+*.zip

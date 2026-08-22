@@ -1,0 +1,204 @@
+skeleton:
+  name: quadruped_generic
+  format_version: 1
+  morphology_class: quadruped
+  up_axis: z
+  forward_axis: x
+  units: meters
+
+root:
+  bone: torso
+
+bones:
+  - name: torso
+    parent: null
+    is_root: true
+
+  - name: FL_upper
+    parent: torso
+    offset: [0.20, 0.10, -0.05]
+    joint:
+      name: FL_hip
+      type: revolute_2dof
+      axes: [pitch, roll]
+      limits:
+        pitch: [-45, 90]
+        roll: [-30, 30]
+      rest_angle:
+        pitch: 20
+        roll: 0
+      max_velocity: 6.0
+      max_torque: 8.0
+
+  - name: FL_lower
+    parent: FL_upper
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: FL_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-10, 150]
+      rest_angle:
+        pitch: 30
+      max_velocity: 8.0
+
+  - name: FL_foot
+    parent: FL_lower
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: FL_ankle
+      type: fixed
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: sphere
+      radius: 0.02
+      offset: [0, 0, -0.01]
+
+  - name: FR_upper
+    parent: torso
+    offset: [0.20, -0.10, -0.05]
+    joint:
+      name: FR_hip
+      type: revolute_2dof
+      axes: [pitch, roll]
+      limits:
+        pitch: [-45, 90]
+        roll: [-30, 30]
+      rest_angle:
+        pitch: 20
+        roll: 0
+      max_velocity: 6.0
+      max_torque: 8.0
+
+  - name: FR_lower
+    parent: FR_upper
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: FR_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-10, 150]
+      rest_angle:
+        pitch: 30
+      max_velocity: 8.0
+
+  - name: FR_foot
+    parent: FR_lower
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: FR_ankle
+      type: fixed
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: sphere
+      radius: 0.02
+      offset: [0, 0, -0.01]
+
+  - name: RL_upper
+    parent: torso
+    offset: [-0.20, 0.10, -0.05]
+    joint:
+      name: RL_hip
+      type: revolute_2dof
+      axes: [pitch, roll]
+      limits:
+        pitch: [-45, 90]
+        roll: [-30, 30]
+      rest_angle:
+        pitch: 20
+        roll: 0
+      max_velocity: 6.0
+      max_torque: 8.0
+
+  - name: RL_lower
+    parent: RL_upper
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: RL_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-10, 150]
+      rest_angle:
+        pitch: 30
+      max_velocity: 8.0
+
+  - name: RL_foot
+    parent: RL_lower
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: RL_ankle
+      type: fixed
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: sphere
+      radius: 0.02
+      offset: [0, 0, -0.01]
+
+  - name: RR_upper
+    parent: torso
+    offset: [-0.20, -0.10, -0.05]
+    joint:
+      name: RR_hip
+      type: revolute_2dof
+      axes: [pitch, roll]
+      limits:
+        pitch: [-45, 90]
+        roll: [-30, 30]
+      rest_angle:
+        pitch: 20
+        roll: 0
+      max_velocity: 6.0
+      max_torque: 8.0
+
+  - name: RR_lower
+    parent: RR_upper
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: RR_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-10, 150]
+      rest_angle:
+        pitch: 30
+      max_velocity: 8.0
+
+  - name: RR_foot
+    parent: RR_lower
+    offset: [0.0, 0.0, -0.18]
+    joint:
+      name: RR_ankle
+      type: fixed
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: sphere
+      radius: 0.02
+      offset: [0, 0, -0.01]
+
+end_effectors: [FL_foot, FR_foot, RL_foot, RR_foot]
+
+gait_defaults:
+  limb_groups:
+    front: [FL_foot, FR_foot]
+    rear: [RL_foot, RR_foot]
+    left: [FL_foot, RL_foot]
+    right: [FR_foot, RR_foot]
+  presets:
+    trot:
+      phase_offset: {FL_foot: 0.0, FR_foot: 0.5, RL_foot: 0.5, RR_foot: 0.0}
+      duty_factor: 0.5
+    walk:
+      phase_offset: {FL_foot: 0.0, RL_foot: 0.25, FR_foot: 0.5, RR_foot: 0.75}
+      duty_factor: 0.65
+
+fall_detection:
+  type: root_height_and_orientation
+  min_root_height: 0.12
+  max_tilt_deg: 60

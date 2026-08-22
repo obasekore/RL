@@ -1,0 +1,229 @@
+skeleton:
+  name: biped_generic
+  format_version: 1
+  morphology_class: biped
+  up_axis: z
+  forward_axis: x
+  units: meters
+
+root:
+  bone: pelvis
+
+bones:
+  - name: pelvis
+    parent: null
+    is_root: true
+
+  - name: L_upper_leg
+    parent: pelvis
+    offset: [0.0, 0.09, -0.05]
+    joint:
+      name: L_hip
+      type: revolute_3dof
+      axes: [pitch, roll, yaw]
+      limits:
+        pitch: [-120, 45]
+        roll: [-45, 45]
+        yaw: [-45, 45]
+      rest_angle:
+        pitch: -5
+        roll: 0
+        yaw: 0
+      max_velocity: 6.0
+      max_torque: 10.0
+
+  - name: L_lower_leg
+    parent: L_upper_leg
+    offset: [0.0, 0.0, -0.40]
+    joint:
+      name: L_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [0, 150]
+      rest_angle:
+        pitch: 5
+      max_velocity: 8.0
+
+  - name: L_foot
+    parent: L_lower_leg
+    offset: [0.0, 0.0, -0.40]
+    joint:
+      name: L_ankle
+      type: revolute_2dof
+      axes: [pitch, roll]
+      limits:
+        pitch: [-30, 45]
+        roll: [-20, 20]
+      rest_angle:
+        pitch: 0
+        roll: 0
+      max_velocity: 8.0
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: box
+      size: [0.22, 0.09, 0.03]
+      offset: [0.02, 0, -0.02]
+
+  - name: R_upper_leg
+    parent: pelvis
+    offset: [0.0, -0.09, -0.05]
+    joint:
+      name: R_hip
+      type: revolute_3dof
+      axes: [pitch, roll, yaw]
+      limits:
+        pitch: [-120, 45]
+        roll: [-45, 45]
+        yaw: [-45, 45]
+      rest_angle:
+        pitch: -5
+        roll: 0
+        yaw: 0
+      max_velocity: 6.0
+      max_torque: 10.0
+
+  - name: R_lower_leg
+    parent: R_upper_leg
+    offset: [0.0, 0.0, -0.40]
+    joint:
+      name: R_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [0, 150]
+      rest_angle:
+        pitch: 5
+      max_velocity: 8.0
+
+  - name: R_foot
+    parent: R_lower_leg
+    offset: [0.0, 0.0, -0.40]
+    joint:
+      name: R_ankle
+      type: revolute_2dof
+      axes: [pitch, roll]
+      limits:
+        pitch: [-30, 45]
+        roll: [-20, 20]
+      rest_angle:
+        pitch: 0
+        roll: 0
+      max_velocity: 8.0
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: box
+      size: [0.22, 0.09, 0.03]
+      offset: [0.02, 0, -0.02]
+
+  - name: spine
+    parent: pelvis
+    offset: [0.0, 0.0, 0.15]
+    joint:
+      name: spine_joint
+      type: revolute_2dof
+      axes: [pitch, yaw]
+      limits:
+        pitch: [-30, 30]
+        yaw: [-40, 40]
+      rest_angle:
+        pitch: 0
+        yaw: 0
+      max_velocity: 4.0
+
+  - name: L_upper_arm
+    parent: spine
+    offset: [0.0, 0.20, 0.35]
+    joint:
+      name: L_shoulder
+      type: revolute_3dof
+      axes: [pitch, roll, yaw]
+      limits:
+        pitch: [-90, 180]
+        roll: [-90, 90]
+        yaw: [-90, 90]
+      rest_angle:
+        pitch: 0
+        roll: 0
+        yaw: 0
+      max_velocity: 8.0
+      max_torque: 5.0
+
+  - name: L_lower_arm
+    parent: L_upper_arm
+    offset: [0.0, 0.0, -0.28]
+    joint:
+      name: L_elbow
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [0, 150]
+      rest_angle:
+        pitch: 10
+      max_velocity: 10.0
+
+  - name: L_hand
+    parent: L_lower_arm
+    offset: [0.0, 0.0, -0.25]
+    joint:
+      name: L_wrist
+      type: fixed
+    is_end_effector: true
+    contact_capable: false
+
+  - name: R_upper_arm
+    parent: spine
+    offset: [0.0, -0.20, 0.35]
+    joint:
+      name: R_shoulder
+      type: revolute_3dof
+      axes: [pitch, roll, yaw]
+      limits:
+        pitch: [-90, 180]
+        roll: [-90, 90]
+        yaw: [-90, 90]
+      rest_angle:
+        pitch: 0
+        roll: 0
+        yaw: 0
+      max_velocity: 8.0
+      max_torque: 5.0
+
+  - name: R_lower_arm
+    parent: R_upper_arm
+    offset: [0.0, 0.0, -0.28]
+    joint:
+      name: R_elbow
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [0, 150]
+      rest_angle:
+        pitch: 10
+      max_velocity: 10.0
+
+  - name: R_hand
+    parent: R_lower_arm
+    offset: [0.0, 0.0, -0.25]
+    joint:
+      name: R_wrist
+      type: fixed
+    is_end_effector: true
+    contact_capable: false
+
+end_effectors: [L_foot, R_foot, L_hand, R_hand]
+
+gait_defaults:
+  limb_groups:
+    legs: [L_foot, R_foot]
+  presets:
+    walk:
+      phase_offset: {L_foot: 0.0, R_foot: 0.5}
+      duty_factor: 0.6
+
+fall_detection:
+  type: root_height_and_orientation
+  min_root_height: 0.5
+  max_tilt_deg: 45

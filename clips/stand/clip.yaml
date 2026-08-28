@@ -1,0 +1,24 @@
+clip:
+  name: stand
+  format_version: 1
+  frame_rate: 20.0
+  duration_s: 0.25
+  loop: cyclic
+provenance:
+  source_type: create
+  source_ref: null
+  authoring_tool: null
+  created_at: null
+  notes: hand-crafted standing pose, physics-scene follow-up
+skeleton:
+  target: C:\Users\obase\Documents\CoppeliaSim_Edu_V4_10_0_rev0\addOns\RL\skeletons\biped_nao.yaml
+  morphology_class: biped
+  retargeted_from: null
+channels:
+  root_pose: authored
+  joint_angles: authored
+  end_effector_targets: {}
+  contact_state: authored
+validation:
+  status: ok
+  issues: []

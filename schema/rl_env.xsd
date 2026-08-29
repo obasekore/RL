@@ -99,6 +99,10 @@
           <xs:enumeration value="distance"/>
           <xs:enumeration value="collision"/>
           <xs:enumeration value="signal_event"/>
+          <xs:enumeration value="pose_tracking"/>
+          <xs:enumeration value="velocity_tracking"/>
+          <xs:enumeration value="end_effector_tracking"/>
+          <xs:enumeration value="contact_matching"/>
           <xs:enumeration value="custom"/>
         </xs:restriction>
       </xs:simpleType>
@@ -126,6 +130,7 @@
         <xs:restriction base="xs:string">
           <xs:enumeration value="signal"/>
           <xs:enumeration value="max_steps"/>
+          <xs:enumeration value="fall_detection"/>
           <xs:enumeration value="custom"/>
         </xs:restriction>
       </xs:simpleType>
@@ -214,6 +219,13 @@
     </xs:sequence>
   </xs:complexType>
 
+  <!-- motion imitation -->
+
+  <xs:complexType name="motionImitationType">
+    <xs:attribute name="clip_dir" type="xs:string" use="required"/>
+    <xs:attribute name="rsi" type="xs:boolean" use="optional" default="true"/>
+  </xs:complexType>
+
   <!-- root -->
 
   <xs:element name="rl_env">
@@ -224,6 +236,7 @@
         <xs:element name="reward" type="rewardType"/>
         <xs:element name="termination" type="terminationType"/>
         <xs:element name="domain_randomization" type="domainRandomizationType" minOccurs="0"/>
+        <xs:element name="motion_imitation" type="motionImitationType" minOccurs="0"/>
       </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required"/>
       <xs:attribute name="step_dt" type="xs:decimal" use="required"/>

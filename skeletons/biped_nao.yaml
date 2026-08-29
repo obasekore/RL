@@ -1,0 +1,266 @@
+skeleton:
+  name: biped_nao
+  format_version: 1
+  morphology_class: biped
+  up_axis: z
+  forward_axis: x
+  units: meters
+
+root:
+  bone: torso
+
+bones:
+  - name: torso
+    parent: null
+    is_root: true
+
+  # -- left leg -----------------------------------------------------------------
+
+  - name: L_hip_yaw
+    parent: torso
+    offset: [-0.0026, 0.0503, -0.1036]
+    joint:
+      name: L_hip_yaw
+      type: revolute_1dof
+      axes: [yaw]
+      limits:
+        yaw: [-65.62, 42.45]
+      max_velocity: 6.0
+
+  - name: L_hip_roll
+    parent: L_hip_yaw
+    offset: [0, 0, 0]
+    joint:
+      name: L_hip_roll
+      type: revolute_1dof
+      axes: [roll]
+      limits:
+        roll: [-21.74, 44.33]
+      max_velocity: 6.0
+
+  - name: L_hip_pitch
+    parent: L_hip_roll
+    offset: [0, 0, 0]
+    joint:
+      name: L_hip_pitch
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-101.62, 24.70]
+      max_velocity: 6.0
+
+  - name: L_knee
+    parent: L_hip_pitch
+    offset: [0, 0, -0.1]
+    joint:
+      name: L_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-5.29, 121.05]
+      max_velocity: 8.0
+
+  - name: L_ankle_pitch
+    parent: L_knee
+    offset: [0, 0, -0.102]
+    joint:
+      name: L_ankle_pitch
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-67.98, 52.87]
+      max_velocity: 8.0
+
+  - name: L_foot
+    parent: L_ankle_pitch
+    offset: [0, 0, 0]
+    joint:
+      name: L_ankle_roll
+      type: revolute_1dof
+      axes: [roll]
+      limits:
+        roll: [-22.28, 45.03]
+      max_velocity: 8.0
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: box
+      size: [0.16, 0.08, 0.02]
+      offset: [0, 0, -0.03]
+
+  # -- right leg ----------------------------------------------------------------
+
+  - name: R_hip_yaw
+    parent: torso
+    offset: [-0.0026, -0.0497, -0.1036]
+    joint:
+      name: R_hip_yaw
+      type: revolute_1dof
+      axes: [yaw]
+      limits:
+        yaw: [-65.62, 42.45]
+      max_velocity: 6.0
+
+  - name: R_hip_roll
+    parent: R_hip_yaw
+    offset: [0, 0, 0]
+    joint:
+      name: R_hip_roll
+      type: revolute_1dof
+      axes: [roll]
+      limits:
+        roll: [-42.30, 23.77]
+      max_velocity: 6.0
+
+  - name: R_hip_pitch
+    parent: R_hip_roll
+    offset: [0, 0, 0]
+    joint:
+      name: R_hip_pitch
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-101.55, 24.79]
+      max_velocity: 6.0
+
+  - name: R_knee
+    parent: R_hip_pitch
+    offset: [0, 0, -0.1]
+    joint:
+      name: R_knee
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-5.29, 121.05]
+      max_velocity: 8.0
+
+  - name: R_ankle_pitch
+    parent: R_knee
+    offset: [0, 0, -0.102]
+    joint:
+      name: R_ankle_pitch
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-67.98, 52.87]
+      max_velocity: 8.0
+
+  - name: R_foot
+    parent: R_ankle_pitch
+    offset: [0, 0, 0]
+    joint:
+      name: R_ankle_roll
+      type: revolute_1dof
+      axes: [roll]
+      limits:
+        roll: [-45.03, 22.28]
+      max_velocity: 8.0
+    is_end_effector: true
+    contact_capable: true
+    contact_geometry:
+      type: box
+      size: [0.16, 0.08, 0.02]
+      offset: [0, 0, -0.03]
+
+  # -- left arm -------------------------------------------------------------------
+
+  - name: L_shoulder_pitch
+    parent: torso
+    offset: [-0.0026, 0.0983, 0.0815]
+    joint:
+      name: L_shoulder_pitch
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-119.53, 119.53]
+      max_velocity: 8.0
+
+  - name: L_shoulder_roll
+    parent: L_shoulder_pitch
+    offset: [0, 0, 0]
+    joint:
+      name: L_shoulder_roll
+      type: revolute_1dof
+      axes: [roll]
+      limits:
+        roll: [-18.00, 76.02]
+      max_velocity: 8.0
+
+  - name: L_elbow_yaw
+    parent: L_shoulder_roll
+    offset: [0.105, 0.015, 0]
+    joint:
+      name: L_elbow_yaw
+      type: revolute_1dof
+      axes: [yaw]
+      limits:
+        yaw: [-119.53, 119.53]
+      max_velocity: 8.0
+
+  - name: L_hand
+    parent: L_elbow_yaw
+    offset: [0.161, 0, 0]
+    joint:
+      name: L_elbow
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-88.51, -2.00]
+      max_velocity: 10.0
+    is_end_effector: true
+    contact_capable: false
+
+  # -- right arm ------------------------------------------------------------------
+
+  - name: R_shoulder_pitch
+    parent: torso
+    offset: [-0.0026, -0.0977, 0.0814]
+    joint:
+      name: R_shoulder_pitch
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [-119.53, 119.53]
+      max_velocity: 8.0
+
+  - name: R_shoulder_roll
+    parent: R_shoulder_pitch
+    offset: [0, 0, 0]
+    joint:
+      name: R_shoulder_roll
+      type: revolute_1dof
+      axes: [roll]
+      limits:
+        roll: [-76.02, 18.00]
+      max_velocity: 8.0
+
+  - name: R_elbow_yaw
+    parent: R_shoulder_roll
+    offset: [0.105, -0.015, 0]
+    joint:
+      name: R_elbow_yaw
+      type: revolute_1dof
+      axes: [yaw]
+      limits:
+        yaw: [-119.53, 119.53]
+      max_velocity: 8.0
+
+  - name: R_hand
+    parent: R_elbow_yaw
+    offset: [0.161, 0, 0]
+    joint:
+      name: R_elbow
+      type: revolute_1dof
+      axes: [pitch]
+      limits:
+        pitch: [2.00, 88.51]
+      max_velocity: 10.0
+    is_end_effector: true
+    contact_capable: false
+
+end_effectors: [L_foot, R_foot, L_hand, R_hand]
+
+fall_detection:
+  type: root_height_and_orientation
+  min_root_height: 0.28
+  max_tilt_deg: 30

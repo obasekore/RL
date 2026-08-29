@@ -8,6 +8,7 @@ from coppelia_rl.env_schema.spec import (
     CameraRandomizationSpec,
     DomainRandomizationSpec,
     EnvSpec,
+    MotionImitationSpec,
     ObservationSpec,
     RangeRandomizationSpec,
     RewardTermSpec,
@@ -85,6 +86,42 @@ def test_roundtrip_kitchen_sink_spec(tmp_path):
         ),
     )
 
+    assert _roundtrip(spec, tmp_path) == spec
+
+
+def _motion_imitation_spec(tmp_path: Path, *, rsi: bool) -> EnvSpec:
+    return EnvSpec(
+        name="quad_walk",
+        step_dt=0.05,
+        scene_path=(tmp_path / "scene.ttt").resolve(),
+        observations=[ObservationSpec(kind="joint_position", key="joint_position_FL_hip_pitch", ref="FL_hip_pitch")],
+        actions=ActionGroupSpec(
+            action_type="continuous",
+            entries=[
+                ActionEntrySpec(kind="joint_position", key="FL_hip_pitch", ref="FL_hip_pitch", value_range=(-1.0, 1.0))
+            ],
+        ),
+        reward_terms=[
+            RewardTermSpec(kind="pose_tracking", weight=0.65),
+            RewardTermSpec(kind="velocity_tracking", weight=0.1),
+            RewardTermSpec(kind="end_effector_tracking", weight=0.15),
+            RewardTermSpec(kind="contact_matching", weight=0.1),
+        ],
+        termination_conditions=[
+            TerminationConditionSpec(kind="fall_detection"),
+            TerminationConditionSpec(kind="max_steps", value=500),
+        ],
+        motion_imitation=MotionImitationSpec(clip_dir=(tmp_path / "clips" / "walk_cycle_01").resolve(), rsi=rsi),
+    )
+
+
+def test_roundtrip_motion_imitation_spec(tmp_path):
+    spec = _motion_imitation_spec(tmp_path, rsi=True)
+    assert _roundtrip(spec, tmp_path) == spec
+
+
+def test_roundtrip_motion_imitation_rsi_false(tmp_path):
+    spec = _motion_imitation_spec(tmp_path, rsi=False)
     assert _roundtrip(spec, tmp_path) == spec
 
 

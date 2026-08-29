@@ -21,6 +21,27 @@ def test_scene_object_pose_roundtrip(fake_sim):
     np.testing.assert_allclose(obj.get_pose(), pose)
 
 
+def test_scene_object_pose_wxyz_roundtrip(fake_sim):
+    handle = fake_sim._new_handle("dummy")
+    obj = SceneObject(fake_sim, handle)
+
+    pose_wxyz = [0.1, 0.2, 0.3, 0.9, 0.1, 0.2, 0.3]  # [x,y,z, qw,qx,qy,qz]
+    obj.set_pose_wxyz(pose_wxyz)
+
+    np.testing.assert_allclose(obj.get_pose_wxyz(), pose_wxyz)
+
+
+def test_scene_object_pose_wxyz_matches_reordered_native_pose(fake_sim):
+    handle = fake_sim._new_handle("dummy")
+    obj = SceneObject(fake_sim, handle)
+
+    obj.set_pose_wxyz([0.1, 0.2, 0.3, 0.9, 0.1, 0.2, 0.3])
+
+    x, y, z, qw, qx, qy, qz = obj.get_pose_wxyz()
+    native = obj.get_pose()  # [x,y,z, qx,qy,qz,qw]
+    np.testing.assert_allclose(native, [x, y, z, qx, qy, qz, qw])
+
+
 def test_scene_object_set_name_registers_alias(fake_sim):
     handle = fake_sim._new_handle("dummy")
     obj = SceneObject(fake_sim, handle)
@@ -39,6 +60,17 @@ def test_joint_target_velocity_and_readback(fake_sim):
 
     assert joint.get_joint_velocity() == 0.5
     assert joint.get_joint_position() == 0.5 * 0.05
+
+
+def test_joint_set_joint_position_calls_instantaneous_setter_not_target(fake_sim):
+    handle = fake_sim._new_handle("joint", joint_position=0.0)
+    joint = Joint(fake_sim, handle)
+
+    joint.set_joint_position(1.25)
+
+    assert fake_sim.objects[handle]["joint_position"] == 1.25
+    assert "joint_target_position" not in fake_sim.objects[handle]
+    assert joint.get_joint_position() == 1.25
 
 
 def test_joint_set_control_mode(fake_sim):

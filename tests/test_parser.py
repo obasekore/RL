@@ -90,6 +90,87 @@ def test_continuous_element_inside_discrete_actions_rejected(tmp_path):
         parse_env_xml(xml_path)
 
 
+# -- motion_imitation -----------------------------------------------------------
+
+_MOTION_IMITATION_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<rl_env name="quad_walk" step_dt="0.05" scene="x.ttt">
+  <observations><joint_position ref="FL_hip_pitch"/></observations>
+  <actions type="continuous"><joint_position ref="FL_hip_pitch" range="[-1,1]"/></actions>
+  <reward>
+    <term type="pose_tracking" weight="0.65"/>
+    <term type="velocity_tracking" weight="0.1"/>
+    <term type="end_effector_tracking" weight="0.15"/>
+    <term type="contact_matching" weight="0.1"/>
+  </reward>
+  <termination>
+    <condition type="fall_detection"/>
+    <condition type="max_steps" value="500"/>
+  </termination>
+  <motion_imitation clip_dir="clips/walk_cycle_01"{rsi_attr}/>
+</rl_env>
+"""
+
+
+def test_motion_imitation_element_parses_clip_dir_and_rsi(tmp_path):
+    xml_path = tmp_path / "quad_walk.xml"
+    xml_path.write_text(_MOTION_IMITATION_XML.format(rsi_attr=' rsi="true"'))
+    spec = parse_env_xml(xml_path)
+    assert spec.motion_imitation is not None
+    assert spec.motion_imitation.clip_dir == (tmp_path / "clips" / "walk_cycle_01").resolve()
+    assert spec.motion_imitation.rsi is True
+
+
+def test_motion_imitation_clip_dir_resolved_relative_to_xml_file(tmp_path):
+    nested = tmp_path / "envs"
+    nested.mkdir()
+    xml_path = nested / "quad_walk.xml"
+    xml_path.write_text(_MOTION_IMITATION_XML.format(rsi_attr=""))
+    spec = parse_env_xml(xml_path)
+    assert spec.motion_imitation.clip_dir == (nested / "clips" / "walk_cycle_01").resolve()
+
+
+def test_motion_imitation_rsi_defaults_to_true_when_omitted(tmp_path):
+    xml_path = tmp_path / "quad_walk.xml"
+    xml_path.write_text(_MOTION_IMITATION_XML.format(rsi_attr=""))
+    spec = parse_env_xml(xml_path)
+    assert spec.motion_imitation.rsi is True
+
+
+def test_motion_imitation_rsi_false_parses(tmp_path):
+    xml_path = tmp_path / "quad_walk.xml"
+    xml_path.write_text(_MOTION_IMITATION_XML.format(rsi_attr=' rsi="false"'))
+    spec = parse_env_xml(xml_path)
+    assert spec.motion_imitation.rsi is False
+
+
+def test_no_motion_imitation_block_parses_as_none(tmp_path):
+    xml_path = tmp_path / "bad.xml"
+    xml_path.write_text(_MINIMAL_XML.format(name="t", scene_attr='scene="x.ttt"', action_type="continuous"))
+    spec = parse_env_xml(xml_path)
+    assert spec.motion_imitation is None
+
+
+def test_pose_velocity_ee_contact_reward_term_kinds_parse_with_only_type_and_weight(tmp_path):
+    xml_path = tmp_path / "quad_walk.xml"
+    xml_path.write_text(_MOTION_IMITATION_XML.format(rsi_attr=""))
+    spec = parse_env_xml(xml_path)
+    kinds = {t.kind: t.weight for t in spec.reward_terms}
+    assert kinds == {
+        "pose_tracking": 0.65,
+        "velocity_tracking": 0.1,
+        "end_effector_tracking": 0.15,
+        "contact_matching": 0.1,
+    }
+
+
+def test_fall_detection_termination_condition_parses(tmp_path):
+    xml_path = tmp_path / "quad_walk.xml"
+    xml_path.write_text(_MOTION_IMITATION_XML.format(rsi_attr=""))
+    spec = parse_env_xml(xml_path)
+    fall_conditions = [c for c in spec.termination_conditions if c.kind == "fall_detection"]
+    assert len(fall_conditions) == 1
+
+
 def test_duplicate_observation_key_raises_clear_error(tmp_path):
     xml_path = tmp_path / "dup.xml"
     xml_path.write_text(

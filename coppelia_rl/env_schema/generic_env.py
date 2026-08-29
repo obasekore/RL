@@ -12,13 +12,16 @@ custom.read/apply/compute/check can be substituted transparently.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Callable
 
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
+from coppelia_rl.env_schema import motion_imitation as motion_imitation_module
 from coppelia_rl.env_schema.escape_hatch import resolve_callable
+from coppelia_rl.env_schema.motion_imitation import _MotionImitationRuntime
 from coppelia_rl.env_schema.spec import (
     ActionEntrySpec,
     ActionGroupSpec,
@@ -164,7 +167,9 @@ def _build_action_space(client: SimClient, actions: ActionGroupSpec) -> tuple[li
 # -- reward ---------------------------------------------------------------------
 
 
-def _build_reward_term(client: SimClient, term: RewardTermSpec) -> Callable[["XmlDefinedEnv"], float]:
+def _build_reward_term(
+    client: SimClient, term: RewardTermSpec, motion_imitation: "_MotionImitationRuntime | None", step_dt: float
+) -> Callable[["XmlDefinedEnv"], float]:
     weight = term.weight
 
     if term.kind == "distance":
@@ -188,6 +193,17 @@ def _build_reward_term(client: SimClient, term: RewardTermSpec) -> Callable[["Xm
 
         return compute
 
+    if term.kind in ("pose_tracking", "velocity_tracking", "end_effector_tracking", "contact_matching"):
+        if motion_imitation is None:
+            raise ValueError(f'reward type="{term.kind}" requires a <motion_imitation> block')
+        if term.kind == "pose_tracking":
+            return lambda env: weight * motion_imitation_module.pose_tracking_reward(motion_imitation)
+        if term.kind == "velocity_tracking":
+            return lambda env: weight * motion_imitation_module.velocity_tracking_reward(motion_imitation)
+        if term.kind == "end_effector_tracking":
+            return lambda env: weight * motion_imitation_module.end_effector_tracking_reward(motion_imitation)
+        return lambda env: weight * motion_imitation_module.contact_matching_reward(motion_imitation, step_dt)
+
     if term.kind == "custom":
         fn = resolve_callable(term.callable)
         return lambda env: weight * float(fn(env))
@@ -199,7 +215,7 @@ def _build_reward_term(client: SimClient, term: RewardTermSpec) -> Callable[["Xm
 
 
 def _build_termination_check(
-    client: SimClient, cond: TerminationConditionSpec
+    client: SimClient, cond: TerminationConditionSpec, motion_imitation: "_MotionImitationRuntime | None"
 ) -> tuple[bool, Callable[["XmlDefinedEnv"], bool]]:
     """Returns (is_truncation, check). max_steps is a truncation; everything else terminates."""
     if cond.kind == "max_steps":
@@ -216,6 +232,11 @@ def _build_termination_check(
             return triggered
 
         return False, check
+
+    if cond.kind == "fall_detection":
+        if motion_imitation is None:
+            raise ValueError('termination type="fall_detection" requires a <motion_imitation> block')
+        return False, motion_imitation_module.make_fall_detection_check(motion_imitation)
 
     if cond.kind == "custom":
         return False, resolve_callable(cond.callable)
@@ -261,13 +282,41 @@ class XmlDefinedEnv(gym.Env):
         client.stop_simulation()
         client.load_scene(spec.scene_path)
 
+        # Built before observations/actions/reward/termination since the
+        # pose_tracking/velocity_tracking/end_effector_tracking/contact_matching
+        # reward kinds and the fall_detection termination kind need it.
+        self._motion_imitation: "_MotionImitationRuntime | None" = None
+        self._reset_state_hooks: list[Callable[[], None]] = []
+        if spec.motion_imitation is not None:
+            self._motion_imitation = motion_imitation_module.build_motion_imitation_runtime(
+                client, spec.motion_imitation
+            )
+            expected_dt = 1.0 / self._motion_imitation.clip.header.clip.frame_rate
+            if not math.isclose(spec.step_dt, expected_dt, rel_tol=1e-6, abs_tol=1e-9):
+                raise ValueError(
+                    f"step_dt={spec.step_dt} must equal 1/clip.frame_rate={expected_dt} for a "
+                    "motion_imitation env - v1 does no interpolation/resampling between the two rates"
+                )
+            self._reset_state_hooks.append(
+                lambda: self._motion_imitation.inject_reset_state(self.np_random, spec.motion_imitation.rsi)
+            )
+
         self._obs_readers = {obs.key: _build_observation_reader(client, obs) for obs in spec.observations}
         self.observation_space = spaces.Dict({key: reader.space for key, reader in self._obs_readers.items()})
 
         self._action_appliers, self.action_space = _build_action_space(client, spec.actions)
 
-        self._reward_terms = [_build_reward_term(client, term) for term in spec.reward_terms]
-        self._termination_checks = [_build_termination_check(client, cond) for cond in spec.termination_conditions]
+        self._reward_terms = [
+            _build_reward_term(client, term, self._motion_imitation, spec.step_dt) for term in spec.reward_terms
+        ]
+        self._termination_checks = [
+            _build_termination_check(client, cond, self._motion_imitation) for cond in spec.termination_conditions
+        ]
+        if self._motion_imitation is not None and self._motion_imitation.loop == "one_shot":
+            # Running out of reference frames is "the script ended," not a failure
+            # state like fall_detection - truncates, matching max_steps's precedent,
+            # not terminates.
+            self._termination_checks.append((True, lambda env: env._motion_imitation.exhausted))
         self._reset_signals = _collect_reset_signals(client, spec)
 
         # Domain randomization is "enabled" simply by the spec having a
@@ -289,6 +338,12 @@ class XmlDefinedEnv(gym.Env):
 
         self._client.stop_simulation()
         self._client.load_scene(self.spec.scene_path)
+        # Runs unconditionally whenever a motion_imitation block exists, even with
+        # RSI disabled - it also resets the runtime's own per-episode state (frame
+        # index, ping_pong direction, one_shot exhaustion, the contact-matching slip
+        # cache), which must happen every episode regardless of the RSI flag.
+        for hook in self._reset_state_hooks:
+            hook()
         for applier in self._action_appliers:
             if applier.reset_hook is not None:
                 applier.reset_hook()
@@ -311,6 +366,8 @@ class XmlDefinedEnv(gym.Env):
         self._apply_action(action)
         self._client.step()
         self.step_count += 1
+        if self._motion_imitation is not None:
+            self._motion_imitation.advance_frame()
 
         if self._randomizer is not None:
             self._randomizer.notify_step()

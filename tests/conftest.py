@@ -39,6 +39,7 @@ class FakeSim:
     vortex_body_primlinearaxisfriction = "vortex_body_primlinearaxisfriction"
     mujoco_body_friction1 = "mujoco_body_friction1"
     texturemap_plane = "plane"
+    handleflag_wxyzquat = 0x10000  # arbitrary sentinel bit - only needs internal self-consistency
 
     # -- joint dynamic control mode
     jointintparam_dynctrlmode = "dynctrlmode"
@@ -97,10 +98,20 @@ class FakeSim:
         self.objects[handle]["orientation"] = np.array(orientation, dtype=float)
 
     def getObjectPose(self, handle, relativeTo):
-        return list(self.objects[handle]["pose"])
+        real_handle = handle & ~self.handleflag_wxyzquat
+        pose = list(self.objects[real_handle]["pose"])  # stored canonically as [x,y,z,qx,qy,qz,qw]
+        if handle & self.handleflag_wxyzquat:
+            x, y, z, qx, qy, qz, qw = pose
+            return [x, y, z, qw, qx, qy, qz]
+        return pose
 
     def setObjectPose(self, handle, relativeTo, pose):
-        self.objects[handle]["pose"] = np.array(pose, dtype=float)
+        real_handle = handle & ~self.handleflag_wxyzquat
+        pose = list(pose)
+        if handle & self.handleflag_wxyzquat:
+            x, y, z, qw, qx, qy, qz = pose
+            pose = [x, y, z, qx, qy, qz, qw]
+        self.objects[real_handle]["pose"] = np.array(pose, dtype=float)
 
     def setObjectAlias(self, handle, alias):
         self.objects[handle]["alias"] = alias
@@ -123,6 +134,10 @@ class FakeSim:
 
     def setJointTargetPosition(self, handle, position):
         self.objects[handle]["joint_target_position"] = position
+
+    def setJointPosition(self, handle, position):
+        self._record("setJointPosition", handle, position)
+        self.objects[handle]["joint_position"] = position
 
     def setJointTargetForce(self, handle, force):
         self.objects[handle]["joint_target_force"] = force

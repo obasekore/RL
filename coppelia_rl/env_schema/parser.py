@@ -13,6 +13,7 @@ from coppelia_rl.env_schema.spec import (
     CameraRandomizationSpec,
     DomainRandomizationSpec,
     EnvSpec,
+    MotionImitationSpec,
     ObservationSpec,
     RangeRandomizationSpec,
     RewardTermSpec,
@@ -57,6 +58,7 @@ def parse_env_xml(path: str | Path) -> EnvSpec:
     scene_path = (path.parent / root.get("scene")).resolve()
 
     dr_elem = root.find("domain_randomization")
+    mi_elem = root.find("motion_imitation")
 
     return EnvSpec(
         name=root.get("name"),
@@ -67,6 +69,7 @@ def parse_env_xml(path: str | Path) -> EnvSpec:
         reward_terms=_parse_reward(root.find("reward")),
         termination_conditions=_parse_termination(root.find("termination")),
         domain_randomization=_parse_domain_randomization(dr_elem) if dr_elem is not None else None,
+        motion_imitation=_parse_motion_imitation(mi_elem, path.parent) if mi_elem is not None else None,
     )
 
 
@@ -158,6 +161,18 @@ def _parse_termination(elem) -> list[TerminationConditionSpec]:
             )
         )
     return conditions
+
+
+def _parse_bool(text: str) -> bool:
+    return text.strip().lower() in ("true", "1")
+
+
+def _parse_motion_imitation(elem, base_dir: Path) -> MotionImitationSpec:
+    rsi_attr = elem.get("rsi")
+    return MotionImitationSpec(
+        clip_dir=(base_dir / elem.get("clip_dir")).resolve(),
+        rsi=_parse_bool(rsi_attr) if rsi_attr is not None else True,
+    )
 
 
 def _parse_domain_randomization(elem) -> DomainRandomizationSpec:

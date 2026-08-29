@@ -41,7 +41,9 @@ class ActionGroupSpec:
 
 @dataclass
 class RewardTermSpec:
-    kind: str  # distance | collision | signal_event | custom
+    # distance | collision | signal_event | pose_tracking | velocity_tracking |
+    # end_effector_tracking | contact_matching | custom
+    kind: str
     weight: float
     from_ref: str | None = None
     to_ref: str | None = None
@@ -53,7 +55,7 @@ class RewardTermSpec:
 
 @dataclass
 class TerminationConditionSpec:
-    kind: str  # signal | max_steps | custom
+    kind: str  # signal | max_steps | fall_detection | custom
     name: str | None = None
     value: float | None = None
     callable: str | None = None
@@ -91,6 +93,12 @@ class DomainRandomizationSpec:
 
 
 @dataclass
+class MotionImitationSpec:
+    clip_dir: Path  # resolved absolute, mirrors scene_path's convention
+    rsi: bool = True
+
+
+@dataclass
 class EnvSpec:
     name: str
     step_dt: float
@@ -100,3 +108,4 @@ class EnvSpec:
     reward_terms: list[RewardTermSpec]
     termination_conditions: list[TerminationConditionSpec]
     domain_randomization: DomainRandomizationSpec | None = None
+    motion_imitation: MotionImitationSpec | None = None

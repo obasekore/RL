@@ -15,6 +15,7 @@ from coppelia_rl.env_schema.spec import (
     ActionGroupSpec,
     DomainRandomizationSpec,
     EnvSpec,
+    MotionImitationSpec,
     ObservationSpec,
     RewardTermSpec,
     TerminationConditionSpec,
@@ -132,12 +133,21 @@ def _serialize_domain_randomization(parent, dr: DomainRandomizationSpec) -> None
         resample_on.set("every_n_steps", str(dr.resample_every_n_steps))
 
 
-def spec_to_element(spec: EnvSpec, scene_path: str | Path | None = None) -> etree._Element:
+def _serialize_motion_imitation(parent, mi: MotionImitationSpec, clip_dir: str | Path | None) -> None:
+    elem = etree.SubElement(parent, "motion_imitation")
+    elem.set("clip_dir", str(clip_dir if clip_dir is not None else mi.clip_dir))
+    elem.set("rsi", "true" if mi.rsi else "false")
+
+
+def spec_to_element(
+    spec: EnvSpec, scene_path: str | Path | None = None, clip_dir: str | Path | None = None
+) -> etree._Element:
     """Builds the `<rl_env>` XML element tree for `spec`.
 
     `scene_path` overrides `spec.scene_path` in the output (e.g. to write a
     path relative to where the caller is about to save the file); defaults to
     `spec.scene_path` (always absolute, since that's what parse_env_xml produces).
+    `clip_dir` is the analogous override for `spec.motion_imitation.clip_dir`.
     """
     root = etree.Element("rl_env")
     root.set("name", spec.name)
@@ -164,16 +174,21 @@ def spec_to_element(spec: EnvSpec, scene_path: str | Path | None = None) -> etre
     if spec.domain_randomization is not None:
         _serialize_domain_randomization(root, spec.domain_randomization)
 
+    if spec.motion_imitation is not None:
+        _serialize_motion_imitation(root, spec.motion_imitation, clip_dir)
+
     return root
 
 
-def spec_to_xml(spec: EnvSpec, scene_path: str | Path | None = None) -> str:
+def spec_to_xml(spec: EnvSpec, scene_path: str | Path | None = None, clip_dir: str | Path | None = None) -> str:
     """Renders `spec` as a pretty-printed, UTF-8 XML document string."""
-    root = spec_to_element(spec, scene_path=scene_path)
+    root = spec_to_element(spec, scene_path=scene_path, clip_dir=clip_dir)
     return etree.tostring(
         root, pretty_print=True, xml_declaration=True, encoding="UTF-8"
     ).decode("utf-8")
 
 
-def save_spec_xml(spec: EnvSpec, path: str | Path, scene_path: str | Path | None = None) -> None:
-    Path(path).write_text(spec_to_xml(spec, scene_path=scene_path), encoding="utf-8")
+def save_spec_xml(
+    spec: EnvSpec, path: str | Path, scene_path: str | Path | None = None, clip_dir: str | Path | None = None
+) -> None:
+    Path(path).write_text(spec_to_xml(spec, scene_path=scene_path, clip_dir=clip_dir), encoding="utf-8")
